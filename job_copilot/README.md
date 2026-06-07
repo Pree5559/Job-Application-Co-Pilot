@@ -51,4 +51,4 @@ Notes:
 Frontend:
 - Static files are served from `app/static/`. Open `http://localhost:8000/` to load the UI.
 
-If you'd like, I can also create an initial Alembic migration file that reflects the current models and commit it.
+ 
