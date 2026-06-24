@@ -1,22 +1,46 @@
-job_copilot/.env
+# Environment variables
 .env
+backend/.env
+job_copilot/.env
+
+# Virtual environments
 .venv/
 venv/
+env/
+ENV/
+
+# Python cache and compiled files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+*.egg-info/
+
+# Database files
 *.sqlite3
 *.db
+backend/*.db
 job_copilot/*.db
+
+# IDE
 .idea/
 .vscode/
+.DS_Store
+
+# Testing
 .pytest_cache/
+
+# Build artifacts
 dist/
 build/
-.DS_Store
-*.egg-info/
-env/
-ENV/
+
+# Logs
 pip-log.txt
 pip-delete-this-directory.txt
+
+# Old project structure (keeping for reference)
+job_copilot/
+job_cilot/
+
+# Temporary debug files
+tmp_*.py

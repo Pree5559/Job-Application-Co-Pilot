@@ -41,7 +41,7 @@ git push -u origin main
    - **Name**: `job-copilot` (or any name you prefer)
    - **Region**: Choose closest to you
    - **Branch**: `main`
-   - **Root Directory**: `job_copilot` (if your code is in a subfolder)
+   - **Root Directory**: `backend`
    - **Runtime**: `Python 3`
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`

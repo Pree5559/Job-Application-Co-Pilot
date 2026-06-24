@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Copilot</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>Job Copilot</h1>
+    <p>Upload a resume, paste a JD or URL, and generate tailored application artifacts.</p>
+  </header>
+
+  <main>
+    <section id="auth-section">
+      <div class="card">
+        <h2>Sign In</h2>
+        <form id="login-form">
+          <input type="text" id="login-username" placeholder="Username" required />
+          <input type="password" id="login-password" placeholder="Password" required />
+          <button type="submit">Login</button>
+        </form>
+      </div>
+      <div class="card">
+        <h2>Sign Up</h2>
+        <form id="signup-form">
+          <input type="text" id="signup-username" placeholder="Username" required />
+          <input type="password" id="signup-password" placeholder="Password" required />
+          <button type="submit">Register</button>
+        </form>
+      </div>
+    </section>
+
+    <section id="app-section" class="hidden">
+      <div class="toolbar">
+        <button id="logout-btn">Logout</button>
+      </div>
+
+      <div class="card">
+        <h2>Create Application</h2>
+        <form id="application-form">
+          <input type="text" id="job-title" placeholder="Job Title" required />
+          <input type="text" id="company" placeholder="Company" required />
+          <textarea id="jd-text" rows="5" placeholder="Paste job description text"></textarea>
+          <input type="text" id="jd-url" placeholder="Optional: JD URL" />
+          <label class="file-label">Upload Resume PDF
+            <input type="file" id="resume-file" accept="application/pdf" required />
+          </label>
+          <button type="submit">Generate Application</button>
+        </form>
+      </div>
+
+      <div class="card" id="applications-card">
+        <h2>Your Applications</h2>
+        <div id="applications-list"></div>
+      </div>
+
+      <div class="card hidden" id="application-detail-card">
+        <button class="secondary" id="back-list">Back to list</button>
+        <h2 id="detail-heading"></h2>
+        <div class="status-row">
+          <span><strong>Status:</strong> <span id="detail-status"></span></span>
+          <select id="status-select">
+            <option value="not yet">not yet</option>
+            <option value="applied">applied</option>
+            <option value="interviewed">interviewed</option>
+            <option value="rejected">rejected</option>
+          </select>
+          <button id="save-status">Update Status</button>
+        </div>
+
+        <div class="diff-grid">
+          <div>
+            <h3>Original Resume</h3>
+            <div class="resume-diff" id="original-resume"></div>
+          </div>
+          <div>
+            <h3>Rewritten Resume</h3>
+            <div class="resume-diff" id="rewritten-resume"></div>
+          </div>
+        </div>
+
+        <div class="card small-card">
+          <h3>ATS Score</h3>
+          <pre id="ats-score"></pre>
+          <button class="secondary" data-section="ats_score">Compute ATS score</button>
+        </div>
+
+        <div class="card small-card">
+          <h3>Fit Analysis</h3>
+          <pre id="fit-analysis"></pre>
+          <button class="secondary" data-section="fit_analysis">Regenerate fit analysis</button>
+        </div>
+
+        <div class="card small-card">
+          <h3>Cover Letter</h3>
+          <pre id="cover-letter"></pre>
+          <button class="secondary" data-section="cover_letter">Regenerate cover letter</button>
+          <button class="secondary" id="download-cover">Download DOCX</button>
+        </div>
+
+        <div class="card small-card">
+          <h3>Interview QA</h3>
+          <pre id="interview-qa"></pre>
+          <button class="secondary" data-section="interview_qa">Regenerate interview questions</button>
+        </div>
+
+        <button id="download-resume" class="primary">Download Resume PDF</button>
+      </div>
+    </section>
+
+    <div id="message" class="message hidden"></div>
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

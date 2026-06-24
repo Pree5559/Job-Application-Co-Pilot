@@ -1,0 +1,273 @@
+const authSection = document.getElementById('auth-section');
+const appSection = document.getElementById('app-section');
+const applicationsList = document.getElementById('applications-list');
+const applicationDetailCard = document.getElementById('application-detail-card');
+const messageBox = document.getElementById('message');
+
+const tokenKey = 'jobCopilotToken';
+let selectedApplicationId = null;
+
+function showMessage(text, type = 'info') {
+  messageBox.textContent = text;
+  messageBox.className = `message ${type}`;
+  messageBox.classList.remove('hidden');
+  setTimeout(() => messageBox.classList.add('hidden'), 4000);
+}
+
+function getAuthHeader() {
+  const token = localStorage.getItem(tokenKey);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+async function requestJson(url, options = {}) {
+  const response = await fetch(url, options);
+  const text = await response.text();
+  let json = null;
+  try { json = JSON.parse(text); } catch (err) {}
+  if (!response.ok) {
+    throw new Error(json?.detail || text || 'Request failed');
+  }
+  return json ?? text;
+}
+
+async function login(event) {
+  event.preventDefault();
+  const username = document.getElementById('login-username').value;
+  const password = document.getElementById('login-password').value;
+  try {
+    const data = await requestJson('/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ username, password }),
+    });
+    localStorage.setItem(tokenKey, data.access_token);
+    showApp();
+  } catch (err) {
+    showMessage(err.message, 'error');
+  }
+}
+
+async function signup(event) {
+  event.preventDefault();
+  const username = document.getElementById('signup-username').value;
+  const password = document.getElementById('signup-password').value;
+  try {
+    const data = await requestJson('/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password }),
+    });
+    localStorage.setItem(tokenKey, data.access_token);
+    showApp();
+  } catch (err) {
+    showMessage(err.message, 'error');
+  }
+}
+
+function logout() {
+  localStorage.removeItem(tokenKey);
+  authSection.classList.remove('hidden');
+  appSection.classList.add('hidden');
+  applicationDetailCard.classList.add('hidden');
+}
+
+async function showApp() {
+  authSection.classList.add('hidden');
+  appSection.classList.remove('hidden');
+  await loadApplications();
+}
+
+async function createApplication(event) {
+  event.preventDefault();
+  const form = document.getElementById('application-form');
+  const formData = new FormData();
+  formData.append('job_title', document.getElementById('job-title').value);
+  formData.append('company', document.getElementById('company').value);
+  formData.append('jd_text', document.getElementById('jd-text').value);
+  formData.append('jd_url', document.getElementById('jd-url').value);
+  const file = document.getElementById('resume-file').files[0];
+  if (!file) {
+    showMessage('Please upload a PDF resume.', 'error');
+    return;
+  }
+  formData.append('resume_file', file);
+
+  try {
+    await requestJson('/applications', {
+      method: 'POST',
+      headers: getAuthHeader(),
+      body: formData,
+    });
+    showMessage('Application created successfully.');
+    form.reset();
+    await loadApplications();
+  } catch (err) {
+    showMessage(err.message, 'error');
+  }
+}
+
+async function loadApplications() {
+  try {
+    const items = await requestJson('/applications', {
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    });
+    applicationsList.innerHTML = items.length ? items.map(renderApplicationCard).join('') : '<p>No applications yet.</p>';
+  } catch (err) {
+    showMessage(err.message, 'error');
+  }
+}
+
+function renderApplicationCard(app) {
+  return `
+    <div class="application-card">
+      <div>
+        <strong>${app.job_title}</strong> at ${app.company}
+        <div class="small-text">Status: ${app.status}</div>
+      </div>
+      <button onclick="viewApplication(${app.id})">View</button>
+    </div>
+  `;
+}
+
+async function viewApplication(id) {
+  selectedApplicationId = id;
+  try {
+    const app = await requestJson(`/applications/${id}`, {
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+    });
+    document.getElementById('detail-heading').textContent = `${app.job_title} at ${app.company}`;
+    document.getElementById('detail-status').textContent = app.status;
+    document.getElementById('status-select').value = app.status;
+    document.getElementById('original-resume').innerHTML = renderDiffText(app.original_resume_text || 'No resume text available.', app.drafts?.resume_rewrite || 'No rewritten resume available.', true);
+    document.getElementById('rewritten-resume').innerHTML = renderDiffText(app.original_resume_text || 'No resume text available.', app.drafts?.resume_rewrite || 'No rewritten resume available.', false);
+    document.getElementById('ats-score').textContent = app.drafts?.ats_score || 'No ATS score available.';
+    document.getElementById('fit-analysis').textContent = app.drafts?.fit_analysis || 'No fit analysis available.';
+    document.getElementById('cover-letter').textContent = app.drafts?.cover_letter || 'No cover letter available.';
+    document.getElementById('interview-qa').textContent = app.drafts?.interview_qa || 'No interview questions available.';
+    applicationDetailCard.classList.remove('hidden');
+    document.getElementById('applications-card').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    showMessage(err.message, 'error');
+  }
+}
+
+async function updateStatus() {
+  if (!selectedApplicationId) return;
+  try {
+    const status = document.getElementById('status-select').value;
+    await requestJson(`/applications/${selectedApplicationId}/status`, {
+      method: 'PUT',
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    document.getElementById('detail-status').textContent = status;
+    showMessage('Status updated.');
+    await loadApplications();
+  } catch (err) {
+    showMessage(err.message, 'error');
+  }
+}
+
+async function regenerateSection(section) {
+  if (!selectedApplicationId) return;
+  try {
+    let url = `/applications/${selectedApplicationId}/regenerate`;
+    let method = 'PUT';
+    let options = {
+      method,
+      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
+      body: JSON.stringify({ section }),
+    };
+
+    if (section === 'ats_score') {
+      url = `/applications/${selectedApplicationId}/ats-score`;
+      options = {
+        method: 'POST',
+        headers: getAuthHeader(),
+      };
+    }
+
+    await requestJson(url, options);
+    showMessage(section === 'ats_score' ? 'ATS score computed.' : `Regenerated ${section.replace('_', ' ')}.`);
+    await viewApplication(selectedApplicationId);
+  } catch (err) {
+    showMessage(err.message, 'error');
+  }
+}
+
+function escapeHtml(value) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function renderDiffText(originalText, rewrittenText, isOriginal) {
+  const originalLines = originalText.split(/\r?\n/);
+  const rewrittenLines = rewrittenText.split(/\r?\n/);
+  const maxLines = Math.max(originalLines.length, rewrittenLines.length);
+  let html = '';
+
+  for (let i = 0; i < maxLines; i += 1) {
+    const originalLine = originalLines[i] || '';
+    const rewrittenLine = rewrittenLines[i] || '';
+    const same = originalLine.trim() === rewrittenLine.trim();
+
+    if (isOriginal) {
+      html += `<div class="line ${same ? '' : 'diff-old'}">${escapeHtml(originalLine || '')}</div>`;
+    } else {
+      html += `<div class="line ${same ? '' : 'diff-new'}">${escapeHtml(rewrittenLine || '')}</div>`;
+    }
+  }
+  return html;
+}
+
+async function downloadArtifact(url, filename) {
+  try {
+    const response = await fetch(url, {
+      headers: getAuthHeader(),
+    });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(text || 'Download failed');
+    }
+    const blob = await response.blob();
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  } catch (err) {
+    showMessage(err.message, 'error');
+  }
+}
+
+function setupEventListeners() {
+  document.getElementById('login-form').addEventListener('submit', login);
+  document.getElementById('signup-form').addEventListener('submit', signup);
+  document.getElementById('logout-btn').addEventListener('click', logout);
+  document.getElementById('application-form').addEventListener('submit', createApplication);
+  document.getElementById('save-status').addEventListener('click', updateStatus);
+  document.getElementById('back-list').addEventListener('click', () => {
+    applicationDetailCard.classList.add('hidden');
+  });
+  document.querySelectorAll('[data-section]').forEach((button) => {
+    button.addEventListener('click', () => regenerateSection(button.dataset.section));
+  });
+  document.getElementById('download-cover').addEventListener('click', () => {
+    downloadArtifact(`/applications/${selectedApplicationId}/download/cover-letter`, 'cover_letter.docx');
+  });
+  document.getElementById('download-resume').addEventListener('click', () => {
+    downloadArtifact(`/applications/${selectedApplicationId}/download/resume`, 'resume.pdf');
+  });
+}
+
+function initialize() {
+  setupEventListeners();
+  if (localStorage.getItem(tokenKey)) {
+    showApp();
+  }
+}
+
+initialize();
