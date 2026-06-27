@@ -68,8 +68,36 @@
               </button>
             </div>
           </div>
-          <button type="submit">Generate Application</button>
+          <button type="submit" id="submit-application-btn">Generate Application</button>
         </form>
+        
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+          <div class="loading-content">
+            <div class="spinner"></div>
+            <h3>Creating Your Application...</h3>
+            <p id="loading-message">Analyzing your resume and job description with AI</p>
+            <div class="loading-steps">
+              <div class="loading-step" id="step-1">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Analyzing job fit</span>
+              </div>
+              <div class="loading-step" id="step-2">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Rewriting resume</span>
+              </div>
+              <div class="loading-step" id="step-3">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Generating cover letter</span>
+              </div>
+              <div class="loading-step" id="step-4">
+                <span class="step-icon">⏳</span>
+                <span class="step-text">Preparing interview questions</span>
+              </div>
+            </div>
+            <p class="loading-note">This may take 20-40 seconds...</p>
+          </div>
+        </div>
       </div>
 
       <div class="card" id="applications-card">

@@ -32,8 +32,16 @@ async function requestJson(url, options = {}) {
 
 async function login(event) {
   event.preventDefault();
-  const username = document.getElementById('login-username').value;
-  const password = document.getElementById('login-password').value;
+  const usernameInput = document.getElementById('login-username');
+  const passwordInput = document.getElementById('login-password');
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
+  
+  if (!username || !password) {
+    showMessage('Please enter both username and password', 'error');
+    return;
+  }
+  
   try {
     const data = await requestJson('/token', {
       method: 'POST',
@@ -41,16 +49,35 @@ async function login(event) {
       body: new URLSearchParams({ username, password }),
     });
     localStorage.setItem(tokenKey, data.access_token);
+    
+    // Clear form fields
+    usernameInput.value = '';
+    passwordInput.value = '';
+    
+    showMessage('Login successful!', 'info');
     showApp();
   } catch (err) {
-    showMessage(err.message, 'error');
+    showMessage(err.message || 'Login failed. Please check your credentials.', 'error');
   }
 }
 
 async function signup(event) {
   event.preventDefault();
-  const username = document.getElementById('signup-username').value;
-  const password = document.getElementById('signup-password').value;
+  const usernameInput = document.getElementById('signup-username');
+  const passwordInput = document.getElementById('signup-password');
+  const username = usernameInput.value.trim();
+  const password = passwordInput.value;
+  
+  if (!username || !password) {
+    showMessage('Please enter both username and password', 'error');
+    return;
+  }
+  
+  if (password.length < 4) {
+    showMessage('Password must be at least 4 characters', 'error');
+    return;
+  }
+  
   try {
     const data = await requestJson('/signup', {
       method: 'POST',
@@ -58,17 +85,36 @@ async function signup(event) {
       body: JSON.stringify({ username, password }),
     });
     localStorage.setItem(tokenKey, data.access_token);
+    
+    // Clear form fields
+    usernameInput.value = '';
+    passwordInput.value = '';
+    
+    showMessage(`Welcome ${username}! Account created successfully.`, 'info');
     showApp();
   } catch (err) {
-    showMessage(err.message, 'error');
+    showMessage(err.message || 'Signup failed. Username might already exist.', 'error');
   }
 }
 
 function logout() {
   localStorage.removeItem(tokenKey);
+  selectedApplicationId = null;
+  
+  // Clear all form fields
+  const forms = document.querySelectorAll('form');
+  forms.forEach(form => form.reset());
+  
+  // Clear file selection
+  if (typeof clearFileSelection === 'function') {
+    clearFileSelection();
+  }
+  
   authSection.classList.remove('hidden');
   appSection.classList.add('hidden');
   applicationDetailCard.classList.add('hidden');
+  
+  showMessage('Logged out successfully', 'info');
 }
 
 async function showApp() {
@@ -92,19 +138,83 @@ async function createApplication(event) {
   }
   formData.append('resume_file', file);
 
+  // Show loading overlay
+  showLoadingOverlay();
+  
   try {
     await requestJson('/applications', {
       method: 'POST',
       headers: getAuthHeader(),
       body: formData,
     });
-    showMessage('Application created successfully.');
+    
+    hideLoadingOverlay();
+    showMessage('Application created successfully! 🎉', 'info');
     form.reset();
     clearFileSelection();
     await loadApplications();
   } catch (err) {
-    showMessage(err.message, 'error');
+    hideLoadingOverlay();
+    showMessage(err.message || 'Failed to create application. Please try again.', 'error');
   }
+}
+
+function showLoadingOverlay() {
+  const overlay = document.getElementById('loading-overlay');
+  const submitBtn = document.getElementById('submit-application-btn');
+  
+  overlay.classList.remove('hidden');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Creating...';
+  submitBtn.style.opacity = '0.6';
+  
+  // Animate steps
+  let stepIndex = 0;
+  const steps = ['step-1', 'step-2', 'step-3', 'step-4'];
+  
+  const animateStep = () => {
+    if (stepIndex < steps.length) {
+      const step = document.getElementById(steps[stepIndex]);
+      const icon = step.querySelector('.step-icon');
+      
+      // Mark current step as active
+      step.classList.add('active');
+      icon.textContent = '⚡';
+      
+      stepIndex++;
+      
+      // Continue animation every 5 seconds
+      if (stepIndex < steps.length) {
+        setTimeout(animateStep, 5000);
+      }
+    }
+  };
+  
+  // Start animation after 1 second
+  setTimeout(animateStep, 1000);
+  
+  // Store interval ID so we can clear it
+  window.loadingAnimationStarted = true;
+}
+
+function hideLoadingOverlay() {
+  const overlay = document.getElementById('loading-overlay');
+  const submitBtn = document.getElementById('submit-application-btn');
+  
+  overlay.classList.add('hidden');
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Generate Application';
+  submitBtn.style.opacity = '1';
+  
+  // Reset all steps
+  const steps = document.querySelectorAll('.loading-step');
+  steps.forEach(step => {
+    step.classList.remove('active');
+    const icon = step.querySelector('.step-icon');
+    icon.textContent = '⏳';
+  });
+  
+  window.loadingAnimationStarted = false;
 }
 
 function handleFileSelect(event) {
@@ -284,6 +394,13 @@ function setupEventListeners() {
 
 function initialize() {
   setupEventListeners();
+  
+  // Ensure loading overlay is hidden on page load
+  const loadingOverlay = document.getElementById('loading-overlay');
+  if (loadingOverlay) {
+    loadingOverlay.classList.add('hidden');
+  }
+  
   if (localStorage.getItem(tokenKey)) {
     showApp();
   }
