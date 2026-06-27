@@ -100,10 +100,27 @@ async function createApplication(event) {
     });
     showMessage('Application created successfully.');
     form.reset();
+    clearFileSelection();
     await loadApplications();
   } catch (err) {
     showMessage(err.message, 'error');
   }
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) {
+    document.getElementById('file-name').textContent = file.name;
+    document.getElementById('file-selected').classList.remove('hidden');
+    document.getElementById('file-label').classList.add('file-has-selection');
+  }
+}
+
+function clearFileSelection() {
+  document.getElementById('resume-file').value = '';
+  document.getElementById('file-selected').classList.add('hidden');
+  document.getElementById('file-label').classList.remove('file-has-selection');
+  document.getElementById('file-name').textContent = '';
 }
 
 async function loadApplications() {
@@ -248,6 +265,8 @@ function setupEventListeners() {
   document.getElementById('signup-form').addEventListener('submit', signup);
   document.getElementById('logout-btn').addEventListener('click', logout);
   document.getElementById('application-form').addEventListener('submit', createApplication);
+  document.getElementById('resume-file').addEventListener('change', handleFileSelect);
+  document.getElementById('clear-file').addEventListener('click', clearFileSelection);
   document.getElementById('save-status').addEventListener('click', updateStatus);
   document.getElementById('back-list').addEventListener('click', () => {
     applicationDetailCard.classList.add('hidden');

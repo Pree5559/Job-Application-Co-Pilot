@@ -44,9 +44,30 @@
           <input type="text" id="company" placeholder="Company" required />
           <textarea id="jd-text" rows="5" placeholder="Paste job description text"></textarea>
           <input type="text" id="jd-url" placeholder="Optional: JD URL" />
-          <label class="file-label">Upload Resume PDF
+          <div class="file-upload-wrapper">
+            <label for="resume-file" class="file-label" id="file-label">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span id="file-label-text">Upload Resume PDF</span>
+            </label>
             <input type="file" id="resume-file" accept="application/pdf" required />
-          </label>
+            <div id="file-selected" class="file-selected hidden">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path>
+                <polyline points="13 2 13 9 20 9"></polyline>
+              </svg>
+              <span id="file-name"></span>
+              <button type="button" id="clear-file" class="clear-file-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
           <button type="submit">Generate Application</button>
         </form>
       </div>
